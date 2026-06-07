@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DeepBrain NeuroMatrix OS | 2026</title>
+    <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
+    <style>
+        :root {
+            --main-bg: #080b10;
+            --card-bg: #11161d;
+            --main-purple: #bd93f9;
+            --main-green: #50fa7b;
+            --main-orange: #ffb86c;
+            --border-color: #21262d;
+            --text-muted: #8b949e;
+        }
+
+        * { box-sizing: border-box; }
+        html, body { 
+            height: 100%; 
+            margin: 0; 
+            padding: 0; 
+            overflow: hidden; 
+            background: var(--main-bg);
+            font-family: 'Courier New', Courier, monospace, system-ui;
+            color: #c9d1d9;
+        }
+
+        .desktop-wrapper {
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            padding: 15px;
+            gap: 15px;
+        }
+
+        /* Taskbar */
+        .taskbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            height: 50px;
+            border-bottom: 1px solid var(--border-color);
+            padding: 0 10px;
+            background: rgba(17, 22, 29, 0.8);
+            backdrop-filter: blur(10px);
+        }
+
+        .logo { font-weight: 800; letter-spacing: 3px; color: #f0f6fc; font-size: 1.1rem; }
+        .logo span { color: var(--main-purple); }
+        
+        .status-pill { 
+            background: rgba(189, 147, 249, 0.1); 
+            border: 1px solid var(--main-purple); 
+            color: var(--main-purple); 
+            padding: 4px 12px; 
+            border-radius: 4px; 
+            font-size: 0.75rem;
+            font-weight: bold;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 0.6; }
+            50% { opacity: 1; }
+            100% { opacity: 0.6; }
+        }
+
+        /* Workspace Grid Split */
+        .workspace {
+            display: grid;
+            grid-template-columns: 1.11fr 1.18fr 1.11fr; 
+            gap: 15px;
+            flex-grow: 1; 
+            min-height: 0; 
+        }
+
+        .panel {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            display: flex;
+            flex-direction: column;
+            padding: 15px;
+            min-height: 0;
+            position: relative;
+        }
+
+        .panel::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 2px;
+            background: linear-gradient(90deg, transparent, var(--border-color), transparent);
+        }
+
+        .panel-header {
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            color: var(--text-muted);
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 1px dashed #21262d;
+            padding-bottom: 8px;
+        }
+
+        /* Value Engine Graph Node List */
+        .scroll-area {
+            flex-grow: 1;
+            overflow-y: auto;
+            background: #04060a;
+            border-radius: 4px;
+            padding: 10px;
+            border: 1px solid #161b22;
+        }
+
+        /* Custom Scrollbar */
+        .scroll-area::-webkit-scrollbar { width: 4px; }
+        .scroll-area::-webkit-scrollbar-track { background: transparent; }
+        .scroll-area::-webkit-scrollbar-thumb { background: #21262d; border-radius: 2px; }
+
+        .node-block {
+            background: #0d1117;
+            border: 1px solid var(--border-color);
+            padding: 8px;
+            margin-bottom: 8px;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .node-meta { display: flex; justify-content: space-between; color: var(--text-muted); }
+        .node-data { color: var(--main-orange); font-weight: bold; }
+        .node-grad { color: var(--main-purple); }
+
+        /* Central Processing Unit Visualization */
+        .engine-display {
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+        }
+
+        .core-matrix {
+            position: relative;
+            width: 140px;
+            height: 140px;
+            margin-bottom: 25px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .matrix-ring {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            border: 2px dashed var(--main-purple);
+            border-radius: 50%;
+            animation: spin 20s linear infinite;
+        }
+
+        .matrix-core {
+            font-size: 3.5rem;
+            transition: all 0.4s ease;
+            filter: drop-shadow(0 0 10px rgba(189, 147, 249, 0.2));
+        }
+
+        @keyframes spin { 100% { transform: rotate(360deg); } }
+
+        #status-title { font-size: 1.6rem; font-weight: bold; color: #f0f6fc; margin: 5px 0; letter-spacing: 1px;}
+        #status-desc { font-size: 0.8rem; color: var(--text-muted); max-width: 80%; line-height: 1.4; }
+
+        /* Progress bars */
+        .bar-container { width: 80%; margin-top: 20px; text-align: left; font-size: 0.75rem; }
+        .bar-label { display: flex; justify-content: space-between; margin-bottom: 5px; color: var(--text-muted); }
+        .bar-track { height: 6px; background: #010409; border-radius: 3px; overflow: hidden; border: 1px solid #21262d; }
+        .bar-fill { width: 0%; height: 100%; background: var(--main-purple); transition: width 0.6s cubic-bezier(0.1, 0.8, 0.2, 1); }
+
+        /* Metrics */
+        .metric-list { display: flex; flex-direction: column; gap: 10px; }
+        .metric-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px;
+            background: #0d1117;
+            border-radius: 4px;
+            border-left: 3px solid var(--main-purple);
+            font-size: 0.8rem;
+        }
+        .m-val { font-weight: bold; color: #f0f6fc; }
+
+        /* Bottom Controls */
+        .action-bar {
+            height: 60px;
+            display: flex;
+            gap: 15px;
+        }
+
+        .btn {
+            flex: 1;
+            border-radius: 4px;
+            border: 1px solid var(--border-color);
+            background: #161b22;
+            color: #c9d1d9;
+            font-family: inherit;
+            font-weight: bold;
+            cursor: pointer;
+            text-transform: uppercase;
+            font-size: 0.85rem;
+            letter-spacing: 1px;
+            transition: all 0.2s;
+        }
+
+        .btn-primary { 
+            background: var(--main-purple); 
+            color: #0d1117; 
+            border: none;
+        }
+        .btn-primary:hover { 
+            box-shadow: 0 0 15px rgba(189, 147, 249, 0.4); 
+            opacity: 0.9;
+        }
+        .btn:active { transform: scale(0.99); }
+    </style>
+</head>
+<body>
+
+<div class="desktop-wrapper">
+    <div class="taskbar">
+        <div class="logo">NEURO MATRIX <span>OS v3.0</span></div>
+        <div class="status-pill" id="engine-status">● AUTODIFF ENGINE READY</div>
+    </div>
+
+    <div class="workspace">
+        
+        <div class="panel">
+            <div class="panel-header">
+                <span>⚡ Computational Graph Nodes</span>
+                <span style="color: var(--main-orange);" id="node-count">Nodes: 12</span>
+            </div>
+            <div class="scroll-area" id="graph-nodes-container">
+                </div>
+        </div>
+
+        <div class="panel">
+            <div class="panel-header">🧠 Fused Operator NPU</div>
+            <div class="engine-display">
+                <div class="core-matrix">
+                    <div class="matrix-ring" id="matrix-ring"></div>
+                    <div class="matrix-core" id="matrix-icon">🔮</div>
+                </div>
+                <div id="status-title">OPTIMIZER IDLE</div>
+                <div id="status-desc">Awaiting loss graph compilation for backward pass execution.</div>
+                
+                <div class="bar-container">
+                    <div class="bar-label"><span>RMSNorm Precision</span><span id="rmsnorm-pct">100%</span></div>
+                    <div class="bar-track"><div class="bar-fill" id="rmsnorm-fill" style="width: 100%"></div></div>
+                </div>
+                <div class="bar-container">
+                    <div class="bar-label"><span>Softmax Entropy</span><span id="softmax-pct">0%</span></div>
+                    <div class="bar-track"><div class="bar-fill" id="softmax-fill" style="width: 0%; background: var(--main-orange)"></div></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="panel">
+            <div class="panel-header">📊 Metrics & Training Convergence</div>
+            <div class="metric-list">
+                <div class="metric-item">
+                    <span style="color:var(--text-muted)">Optimization Target</span>
+                    <span class="m-val">AdamW (Fused)</span>
+                </div>
+                <div class="metric-item">
+                    <span style="color:var(--text-muted)">Learning Rate</span>
+                    <span class="m-val" id="lr-val">0.0003</span>
+                </div>
+                <div class="metric-item">
+                    <span style="color:var(--text-muted)">Loss Function</span>
+                    <span class="m-val">NLL Loss</span>
+                </div>
+            </div>
+            
+            <div style="margin-top: auto; border-top: 1px dashed #21262d; padding-top: 15px;">
+                <div class="panel-header" style="border:none; margin-bottom: 5px;">Dynamic Loss History</div>
+                <div id="lossChart"></div>
+            </div>
+        </div>
+
+    </div>
+
+    <div class="action-bar">
+        <button class="btn btn-primary" onclick="triggerBackwardPass()">Trigger Backward Pass</button>
+        <button class="btn" onclick="stepOptimizer()">Step AdamW Optimizer</button>
+    </div>
+</div>
+
+<script>
+    // 1. Initial Computatational Node Mocking
+    const nodeNames = ["Q_weight", "K_weight", "V_weight", "attn_scores", "fused_rms", "softmax_out", "fused_attn", "linear_w", "logits", "targets", "loss_node"];
+    let nodesData = [];
+
+    function generateNodes(hasGradients = false) {
+        const container = document.getElementById('graph-nodes-container');
+        container.innerHTML = '';
+        nodesData = [];
+
+        nodeNames.forEach((name, index) => {
+            const dataVal = (Math.random() * 2 - 1).toFixed(4);
+            const gradVal = hasGradients ? (Math.random() * 0.05).toFixed(6) : "0.000000";
+            
+            nodesData.push({ name, data: dataVal, grad: gradVal });
+
+            const block = document.createElement('div');
+            block.className = 'node-block';
+            block.innerHTML = `
+                <div class="node-meta"><span>[0x0${index.toString(16)}] ${name}</span><span style="color:#50fa7b">_op: Fused</span></div>
+                <div>.data = <span class="node-data">${dataVal}</span></div>
+                <div>.grad = <span class="node-grad">${gradVal}</span></div>
+            `;
+            container.appendChild(block);
+        });
+        document.getElementById('node-count').innerText = `Nodes: ${nodesData.length}`;
+    }
+    
+    generateNodes(false);
+
+    // 2. ApexCharts - Loss History Setup
+    let lossHistory = [2.45, 1.98, 1.42, 1.12, 0.85, 0.61, 0.42];
+    const chart = new ApexCharts(document.querySelector("#lossChart"), {
+        series: [{ name: 'Loss', data: lossHistory }],
+        chart: { 
+            type: 'area', 
+            height: 130, 
+            sparklines: { enabled: true },
+            animations: { enabled: true, easing: 'easeinout', speed: 400 }
+        },
+        colors: ['#bd93f9'],
+        stroke: { curve: 'smooth', width: 2 },
+        fill: {
+            type: 'gradient',
+            gradient: { opacityFrom: 0.4, opacityTo: 0.0 }
+        }
+    });
+    chart.render();
+
+    // 3. UI Interaction Logic
+    let backwardExecuted = false;
+    let currentStep = 7;
+
+    function triggerBackwardPass() {
+        const title = document.getElementById('status-title');
+        const desc = document.getElementById('status-desc');
+        const icon = document.getElementById('matrix-icon');
+        const ring = document.getElementById('matrix-ring');
+        const statusPill = document.getElementById('engine-status');
+
+        title.innerText = "BACKWARD PASS";
+        title.style.color = "var(--main-orange)";
+        desc.innerText = "Running topological sort... Applying chain rule on fused operator matrix.";
+        icon.innerText = "⚡";
+        ring.style.animationDuration = "2s";
+        statusPill.innerText = "● GRAPH BACKWARD RUNNING";
+        statusPill.style.color = "var(--main-orange)";
+        statusPill.style.borderColor = "var(--main-orange)";
+        statusPill.style.background = "rgba(255, 184, 108, 0.1)";
+
+        // Morph progress bars dynamically to simulate backprop calculations
+        document.getElementById('rmsnorm-fill').style.width = "42%";
+        document.getElementById('rmsnorm-pct').innerText = "42% (d_X)";
+        document.getElementById('softmax-fill').style.width = "89%";
+        document.getElementById('softmax-pct').innerText = "89% (d_S)";
+
+        setTimeout(() => {
+            generateNodes(true); // Populate Gradients
+            title.innerText = "GRADIENTS RETAINED";
+            title.style.color = "var(--main-green)";
+            desc.innerText = "All partial derivatives populated. Graph nodes updated safely.";
+            icon.innerText = "💾";
+            backwardExecuted = true;
+        }, 1200);
+    }
+
+    function stepOptimizer() {
+        const title = document.getElementById('status-title');
+        const desc = document.getElementById('status-desc');
+        const icon = document.getElementById('matrix-icon');
+        const ring = document.getElementById('matrix-ring');
+        const statusPill = document.getElementById('engine-status');
+
+        if (!backwardExecuted) {
+            title.innerText = "ERROR: NO GRADIENTS";
+            title.style.color = "red";
+            desc.innerText = "Cannot step optimizer without computing backward pass gradients first.";
+            icon.innerText = "❌";
+            return;
+        }
+
+        title.innerText = "ADAMW UPDATING";
+        title.style.color = "var(--main-purple)";
+        desc.innerText = "Applying first/second momentum bias corrections and weight decay.";
+        icon.innerText = "⚙️";
+        ring.style.animationDuration = "0.5s";
+
+        setTimeout(() => {
+            // Simulate loss dropping
+            const lastLoss = lossHistory[lossHistory.length - 1];
+            const nextLoss = Math.max(0.02, (lastLoss * (0.75 + Math.random() * 0.15))).toFixed(3);
+            lossHistory.push(parseFloat(nextLoss));
+            chart.updateSeries([{ data: lossHistory }]);
+
+            // Update learning rate decay
+            const currentLr = (0.0003 * (1 - currentStep / 100)).toFixed(6);
+            document.getElementById('lr-val').innerText = currentLr;
+            currentStep++;
+
+            // Reset States
+            generateNodes(false); // clear gradients for next round
+            backwardExecuted = false;
+
+            title.innerText = "OPTIMIZER STEP COMPLETE";
+            title.style.color = "#f0f6fc";
+            desc.innerText = `Loss reduced to ${nextLoss}. Weights updated successfully. Gradients flushed.`;
+            icon.innerText = "🔮";
+            ring.style.animationDuration = "20s";
+
+            statusPill.innerText = "● AUTODIFF ENGINE READY";
+            statusPill.style.color = "var(--main-purple)";
+            statusPill.style.borderColor = "var(--main-purple)";
+            statusPill.style.background = "rgba(189, 147, 249, 0.1)";
+
+            document.getElementById('rmsnorm-fill').style.width = "100%";
+            document.getElementById('rmsnorm-pct').innerText = "100%";
+            document.getElementById('softmax-fill').style.width = "0%";
+            document.getElementById('softmax-pct').innerText = "0%";
+        }, 1000);
+    }
+</script>
+</body>
+</html>
